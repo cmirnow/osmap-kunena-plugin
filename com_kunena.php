@@ -11,6 +11,15 @@
  * Modified by Masterpro project (https://masterpro.ws) for OsMap & PHP 8.*.
  */
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\Utilities\ArrayHelper;
+use Kunena\Forum\Libraries\Factory\KunenaFactory;
+use Kunena\Forum\Libraries\Forum\KunenaForum;
+use Kunena\Forum\Libraries\Forum\Category\KunenaCategoryHelper;
+use Kunena\Forum\Libraries\Forum\Topic\KunenaTopicHelper;
+use Joomla\CMS\Version;
+
 /** Handles Kunena forum structure */
 class xmap_com_kunena
 {
@@ -25,9 +34,9 @@ class xmap_com_kunena
     {
         $link_query = parse_url($node->link);
         parse_str(html_entity_decode($link_query['query']), $link_vars);
-        $catid = intval(JArrayHelper::getValue($link_vars, 'catid', 0));
-        $id = intval(JArrayHelper::getValue($link_vars, 'id', 0));
-        $func = JArrayHelper::getValue($link_vars, 'func', '', '');
+        $catid = intval(ArrayHelper::getValue($link_vars, 'catid', 0));
+        $id = intval(ArrayHelper::getValue($link_vars, 'id', 0));
+        $func = ArrayHelper::getValue($link_vars, 'func', '', '');
         if($func = 'showcat' && $catid)
         {
             $node->uid = 'com_kunenac'.$catid;
@@ -58,7 +67,7 @@ class xmap_com_kunena
             self::$profile = KunenaFactory::getUser();
         }
 
-        $user = JFactory::getUser();
+        $user = Factory::getUser();
         $catid = 0;
 
         $link_query = parse_url($parent->link);
@@ -71,9 +80,9 @@ class xmap_com_kunena
 
 
         // Kubik-Rubik Solution - get the correct view in Kunena >= 2.0.1 - START
-        $view = JArrayHelper::getValue($link_vars, 'view', '');
-        $layout = JArrayHelper::getValue($link_vars, 'layout', '');
-        $catid_link = JArrayHelper::getValue($link_vars, 'catid', 0);
+        $view = ArrayHelper::getValue($link_vars, 'view', '');
+        $layout = ArrayHelper::getValue($link_vars, 'layout', '');
+        $catid_link = ArrayHelper::getValue($link_vars, 'catid', 0);
 
         if($view == 'category' AND (!$layout OR 'list' == $layout))
         {
@@ -81,7 +90,7 @@ class xmap_com_kunena
             {
                 $link_query = parse_url($parent->link);
                 parse_str(html_entity_decode($link_query['query']), $link_vars);
-                $catid = JArrayHelper::getValue($link_vars, 'catid', 0);
+                $catid = ArrayHelper::getValue($link_vars, 'catid', 0);
             }
             else
             {
@@ -89,10 +98,10 @@ class xmap_com_kunena
             }
 
             // Get ItemID of the main menu entry of the component
-            $component = JComponentHelper::getComponent('com_kunena');
+            $component = ComponentHelper::getComponent('com_kunena');
 
             // Deprecated $menus = JApplication::getMenu('site', array());
-            $menus = JFactory::getApplication()->getMenu('site', array());
+            $menus = Factory::getApplication()->getMenu('site', array());
             $items = $menus->getItems('component_id', $component->id);
 
             foreach($items as $item)
@@ -110,15 +119,15 @@ class xmap_com_kunena
         }
         // Kubik-Rubik Solution - END
 
-        $include_topics = JArrayHelper::getValue($params, 'include_topics', 1);
+        $include_topics = ArrayHelper::getValue($params, 'include_topics', 1);
         $include_topics = ( $include_topics == 1
                 || ( $include_topics == 2 && $xmap->view == 'xml')
                 || ( $include_topics == 3 && $xmap->view == 'html')
                 || $xmap->view == 'navigator');
         $params['include_topics'] = $include_topics;
 
-        $priority = JArrayHelper::getValue($params, 'cat_priority', $parent->priority);
-        $changefreq = JArrayHelper::getValue($params, 'cat_changefreq', $parent->changefreq);
+        $priority = ArrayHelper::getValue($params, 'cat_priority', $parent->priority);
+        $changefreq = ArrayHelper::getValue($params, 'cat_changefreq', $parent->changefreq);
         if($priority == '-1')
             $priority = $parent->priority;
         if($changefreq == '-1')
@@ -126,7 +135,7 @@ class xmap_com_kunena
 
         $params['cat_priority'] = $priority;
         $params['cat_changefreq'] = $changefreq;
-        $jVersion = new JVersion();
+        $jVersion = new Version();
         if ( $jVersion->isCompatible('3.1') ){
             $params['groups'] = implode(',', $user->getAuthorisedViewLevels());
         }
@@ -134,8 +143,8 @@ class xmap_com_kunena
             $params['groups'] = implode(',', $user->authorisedLevels());
         }
 
-        $priority = JArrayHelper::getValue($params, 'topic_priority', $parent->priority);
-        $changefreq = JArrayHelper::getValue($params, 'topic_changefreq', $parent->changefreq);
+        $priority = ArrayHelper::getValue($params, 'topic_priority', $parent->priority);
+        $changefreq = ArrayHelper::getValue($params, 'topic_changefreq', $parent->changefreq);
         if($priority == '-1')
             $priority = $parent->priority;
 
@@ -147,7 +156,7 @@ class xmap_com_kunena
 
         if($include_topics)
         {
-            $ordering = JArrayHelper::getValue($params, 'topics_order', 'ordering');
+            $ordering = ArrayHelper::getValue($params, 'topics_order', 'ordering');
             if(!in_array($ordering, array('id', 'ordering', 'time', 'subject', 'hits')))
                 $ordering = 'ordering';
             $params['topics_order'] = 't.`'.$ordering.'`';
@@ -157,14 +166,14 @@ class xmap_com_kunena
             $params['days'] = '';
 
             // Kubik-Rubik Solution - limit must be only the number + check whether variable is numeric - START
-            $limit = JArrayHelper::getValue($params, 'max_topics', '');
+            $limit = ArrayHelper::getValue($params, 'max_topics', '');
 
             if(is_numeric($limit))
             {
                 $params['limit'] = $limit;
             }
 
-            $days = JArrayHelper::getValue($params, 'max_age', '');
+            $days = ArrayHelper::getValue($params, 'max_age', '');
             $params['days'] = false;
 
             if(is_numeric($days))
@@ -185,7 +194,7 @@ class xmap_com_kunena
 
     function getCategoryTree($xmap, $parent, &$params, $parentCat)
     {
-        $db = JFactory::getDBO();
+        $db = Factory::getDBO();
 
         // Load categories
         if(self::getKunenaMajorVersion() >= '2.0')
@@ -194,7 +203,7 @@ class xmap_com_kunena
             $catlink = 'index.php?option=com_kunena&amp;view=category&amp;catid=%s&Itemid='.$parent->id;
             $toplink = 'index.php?option=com_kunena&amp;view=topic&amp;catid=%s&amp;id=%s&Itemid='.$parent->id;
 
-            $categories = KunenaForumCategoryHelper::getChildren($parentCat);
+            $categories = KunenaCategoryHelper::getChildren($parentCat);
         }
         else
         {
@@ -245,7 +254,7 @@ class xmap_com_kunena
             {
                 // Kunena 2.0+
                 // TODO: orderby parameter is missing:
-                $topics = KunenaForumTopicHelper::getLatestTopics($parentCat, 0, ($params['limit'] ? (int)$params['limit'] : PHP_INT_MAX), array('starttime', $params['days']));
+                $topics = KunenaTopicHelper::getLatestTopics($parentCat, 0, ($params['limit'] ? (int)$params['limit'] : PHP_INT_MAX), array('starttime', $params['days']));
             }
             else
             {
@@ -322,7 +331,7 @@ class xmap_com_kunena
         {
             jimport('joomla.application.component.helper');
             // Check if Kunena component is installed/enabled
-            if(!JComponentHelper::isEnabled('com_kunena', true))
+            if(!ComponentHelper::isEnabled('com_kunena', true))
             {
                 return false;
             }
