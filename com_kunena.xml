@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Id$ -->
-<extension type="plugin" group="xmap" version="1.6" method="upgrade">
+<extension type="plugin" group="xmap" version="4.0" method="upgrade">
     <name>OsMap - Kunena Plugin</name>
     <author>Masterpro project</author>
     <creationDate>December 2022</creationDate>
@@ -9,7 +9,7 @@
     <authorEmail>info@masterpro.ws</authorEmail>
     <authorUrl>https://masterpro.ws</authorUrl>
     <version>2.0.6</version>
-    <description>OsMap Plugin for Kunena 5 Forum</description>
+    <description>OsMap Plugin for Kunena 6 Forum</description>
     <files>
         <filename plugin="com_kunena">com_kunena.php</filename>
     </files>
