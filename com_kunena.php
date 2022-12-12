@@ -356,7 +356,7 @@ class xmap_com_kunena
         static $version;
         if(!$version)
         {
-            if(class_exists('KunenaForum'))
+            if(class_exists('Kunena\Forum\Libraries\Forum\KunenaForum'))
             {
                 $version = KunenaForum::versionMajor();
             }
