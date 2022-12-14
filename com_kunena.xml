@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Id$ -->
 <extension type="plugin" group="xmap" version="4.0" method="upgrade">
-    <name>OsMap - Kunena Plugin</name>
+    <name>XMAP - Kunena for OsMap</name>
     <author>Masterpro project</author>
-    <creationDate>December 2022</creationDate>
+    <creationDate>December 14, 2022</creationDate>
     <copyright>GNU GPL</copyright>
     <license>http://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
     <authorEmail>info@masterpro.ws</authorEmail>
     <authorUrl>https://masterpro.ws</authorUrl>
-    <version>2.0.6</version>
-    <description>OsMap Plugin for Kunena 6 Forum</description>
+    <version>3.0</version>
+    <description>OsMap plugin for Kunena 6 Forum. This plugin adds OSMap integration for Kunena Forum to generate proper sitemap.</description>
+    <updateservers>
+        <server type="extension" priority="1" name="Masterpro project">https://masterpro.ws/geo/updates/xmap.xml</server>
+    </updateservers>
     <files>
         <filename plugin="com_kunena">com_kunena.php</filename>
     </files>

@@ -3,29 +3,28 @@
  * @author Guillermo Vargas, http://joomla.vargas.co.cr
  * @email guille@vargas.co.cr
  * @version $Id$
- * @package OsMap
+ * @package XMap
  * @license GNU/GPL
- * @description OsMap plugin for Kunena Forum Component.
+ * @description XMap plugin for Kunena Forum.
  *
- * Modified by Kubik-Rubik (http://joomla-extensions.kubik-rubik.de) to work with Kunena >= 2.0.1.
- * Modified by Masterpro project (https://masterpro.ws) for OsMap & PHP 8.*.
+ * Modified by Masterpro project (https://masterpro.ws).
  */
+
+defined( '_JEXEC' ) or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Utilities\ArrayHelper;
 use Kunena\Forum\Libraries\Factory\KunenaFactory;
-use Kunena\Forum\Libraries\Forum\KunenaForum;
 use Kunena\Forum\Libraries\Forum\Category\KunenaCategoryHelper;
 use Kunena\Forum\Libraries\Forum\Topic\KunenaTopicHelper;
-use Joomla\CMS\Version;
 
 /** Handles Kunena forum structure */
 class xmap_com_kunena
 {
     /*
      * This function is called before a menu item is printed. We use it to set the
-     * proper uniqueid for the item
+     * proper uniqueid for the item.
      */
     static $profile;
     static $config;
@@ -78,8 +77,6 @@ class xmap_com_kunena
 
         parse_str(html_entity_decode($link_query['query']), $link_vars);
 
-
-        // Kubik-Rubik Solution - get the correct view in Kunena >= 2.0.1 - START
         $view = ArrayHelper::getValue($link_vars, 'view', '');
         $layout = ArrayHelper::getValue($link_vars, 'layout', '');
         $catid_link = ArrayHelper::getValue($link_vars, 'catid', 0);
@@ -99,8 +96,6 @@ class xmap_com_kunena
 
             // Get ItemID of the main menu entry of the component
             $component = ComponentHelper::getComponent('com_kunena');
-
-            // Deprecated $menus = JApplication::getMenu('site', array());
             $menus = Factory::getApplication()->getMenu('site', array());
             $items = $menus->getItems('component_id', $component->id);
 
@@ -117,7 +112,6 @@ class xmap_com_kunena
         {
             return true;
         }
-        // Kubik-Rubik Solution - END
 
         $include_topics = ArrayHelper::getValue($params, 'include_topics', 1);
         $include_topics = ( $include_topics == 1
@@ -135,14 +129,7 @@ class xmap_com_kunena
 
         $params['cat_priority'] = $priority;
         $params['cat_changefreq'] = $changefreq;
-        $jVersion = new Version();
-        if ( $jVersion->isCompatible('3.1') ){
-            $params['groups'] = implode(',', $user->getAuthorisedViewLevels());
-        }
-        else{// legacy
-            $params['groups'] = implode(',', $user->authorisedLevels());
-        }
-
+        $params['groups'] = implode(',', $user->getAuthorisedViewLevels());
         $priority = ArrayHelper::getValue($params, 'topic_priority', $parent->priority);
         $changefreq = ArrayHelper::getValue($params, 'topic_changefreq', $parent->changefreq);
         if($priority == '-1')
@@ -165,7 +152,6 @@ class xmap_com_kunena
             $params['limit'] = '';
             $params['days'] = '';
 
-            // Kubik-Rubik Solution - limit must be only the number + check whether variable is numeric - START
             $limit = ArrayHelper::getValue($params, 'max_topics', '');
 
             if(is_numeric($limit))
@@ -180,53 +166,23 @@ class xmap_com_kunena
             {
                 $params['days'] = ($xmap->now - (intval($days) * 86400));
             }
-            // Kubik-Rubik Solution - END
         }
 
         $params['table_prefix'] = xmap_com_kunena::getTablePrefix();
-
         xmap_com_kunena::getCategoryTree($xmap, $parent, $params, $catid);
     }
 
-    /*
-     * Builds the Kunena's tree
-     */
+     // Builds the Kunena's tree
 
     function getCategoryTree($xmap, $parent, &$params, $parentCat)
     {
         $db = Factory::getDBO();
 
         // Load categories
-        if(self::getKunenaMajorVersion() >= '2.0')
-        {
-            // Kunena 2.0+
             $catlink = 'index.php?option=com_kunena&amp;view=category&amp;catid=%s&Itemid='.$parent->id;
             $toplink = 'index.php?option=com_kunena&amp;view=topic&amp;catid=%s&amp;id=%s&Itemid='.$parent->id;
 
             $categories = KunenaCategoryHelper::getChildren($parentCat);
-        }
-        else
-        {
-            $catlink = 'index.php?option=com_kunena&amp;func=showcat&amp;catid=%s&Itemid='.$parent->id;
-            $toplink = 'index.php?option=com_kunena&amp;func=view&amp;catid=%s&amp;id=%s&Itemid='.$parent->id;
-
-            if(self::getKunenaMajorVersion() >= '1.6')
-            {
-                // Kunena 1.6+
-                kimport('session');
-                $session = KunenaFactory::getSession();
-                $session->updateAllowedForums();
-                $allowed = $session->allowed;
-                $query = "SELECT id, name FROM `#__kunena_categories` WHERE parent={$parentCat} AND id IN ({$allowed}) ORDER BY ordering";
-            }
-            else
-            {
-                // Kunena 1.0+
-                $query = "SELECT id, name FROM `{$params['table_prefix']}_categories` WHERE parent={$parentCat} AND published=1 AND pub_access=0 ORDER BY ordering";
-            }
-            $db->setQuery($query);
-            $categories = $db->loadObjectList();
-        }
 
         /* get list of categories */
         $xmap->changeLevel(1);
@@ -250,36 +206,9 @@ class xmap_com_kunena
 
         if($params['include_topics'])
         {
-            if(self::getKunenaMajorVersion() >= '2.0')
-            {
-                // Kunena 2.0+
-                // TODO: orderby parameter is missing:
                 $topics = KunenaTopicHelper::getLatestTopics($parentCat, 0, ($params['limit'] ? (int)$params['limit'] : PHP_INT_MAX), array('starttime', $params['days']));
-            }
-            else
-            {
-                $access = KunenaFactory::getAccessControl();
-                $hold = $access->getAllowedHold(self::$profile, $parentCat);
-                // Kunena 1.0+
-                $query = "SELECT t.id, t.catid, t.subject, max(m.time) as time, count(m.id) as msgcount
-                    FROM {$params['table_prefix']}_messages t
-                    INNER JOIN {$params['table_prefix']}_messages AS m ON t.id = m.thread
-                    WHERE t.catid=$parentCat AND t.parent=0
-                        AND t.hold in ({$hold})
-                    GROUP BY m.`thread`
-                    ORDER BY {$params['topics_order']} DESC";
-                if($params['days'])
-                {
-                    $query = "SELECT * FROM ($query) as topics WHERE time >= {$params['days']}";
-                }
-                #echo str_replace('#__','mgbj2_',$query);
-                $db->setQuery($query, 0, $params['limit']);
-                $topics = $db->loadObjectList();
-            }
 
-            // Kubik-Rubik Solution - call the array item 1, because 0 only contains the number of topics in this category - START
             foreach($topics[1] as $topic)
-            // Kubik-Rubik Solution - END
             {
                 $node = new stdclass;
                 $node->id = $parent->id;
@@ -288,17 +217,13 @@ class xmap_com_kunena
                 $node->name = $topic->subject;
                 $node->priority = $params['topic_priority'];
                 $node->changefreq = $params['topic_changefreq'];
-
-                // Kubik-Rubik Solution - names have been changed - START
                 $node->modified = intval($topic->last_post_time);
                 $node->link = sprintf($toplink, $topic->category_id, $topic->id);
-                // Kubik-Rubik Solution - END
-
                 $node->expandible = false;
                 $node->secure = $parent->secure;
+
                 if($xmap->printNode($node) !== FALSE)
                 {
-                    // Pagination will not work with K2.0, revisit this when that version is out and stable
                     if($params['include_pagination'] && isset($topic->msgcount) && $topic->msgcount > self::$config->messages_per_page)
                     {
                         $msgPerPage = self::$config->messages_per_page;
@@ -347,42 +272,8 @@ class xmap_com_kunena
         return true;
     }
 
-    /**
-     * Based on Matias' version (Thanks)
-     * See: http://docs.kunena.org/index.php/Developing_Kunena_Router
-     */
-    function getKunenaMajorVersion()
-    {
-        static $version;
-        if(!$version)
-        {
-            if(class_exists('Kunena\Forum\Libraries\Forum\KunenaForum'))
-            {
-                $version = KunenaForum::versionMajor();
-            }
-            elseif(class_exists('Kunena'))
-            {
-                $version = substr(Kunena::version(), 0, 3);
-            }
-            elseif(is_file(JPATH_ROOT.'/components/com_kunena/lib/kunena.defines.php'))
-            {
-                $version = '1.5';
-            }
-            elseif(is_file(JPATH_ROOT.'/components/com_kunena/lib/kunena.version.php'))
-            {
-                $version = '1.0';
-            }
-        }
-        return $version;
-    }
-
     function getTablePrefix()
     {
-        $version = self::getKunenaMajorVersion();
-        if($version <= 1.5)
-        {
-            return '#__fb';
-        }
         return '#__kunena';
     }
 
